@@ -54,6 +54,11 @@ interface EditableItem extends ParsedItem {
   selectedProductId: number | null;
 }
 
+// 检测微信内置浏览器（微信内无法下载文件，需引导用户用系统浏览器打开）
+function isWeChatBrowser(): boolean {
+  return /MicroMessenger/i.test(navigator.userAgent);
+}
+
 export default function SimpleCost() {
   const [products, setProducts] = useState<ProductRow[]>(
     defaultSimpleCostProducts.map((p) => ({ ...p, costTotal: 0 }))
@@ -150,6 +155,10 @@ export default function SimpleCost() {
   };
 
   const exportCostExcel = () => {
+    if (isWeChatBrowser()) {
+      toast.error("微信内无法下载文件，请点击右上角「···」选择「在浏览器打开」后导出");
+      return;
+    }
     const filtered = products.filter((p) => p.quantity > 0);
     if (filtered.length === 0) {
       toast.error("请至少填写一项");

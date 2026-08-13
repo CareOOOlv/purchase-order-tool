@@ -1,73 +1,28 @@
-# React + TypeScript + Vite
+# OHMO 采购单 / 成本测算工具
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite 7 + Tailwind CSS + shadcn/ui 构建的移动端工具集。
 
-Currently, two official plugins are available:
+## 三个工具（独立入口，互不互通）
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+| 工具 | 访问地址 | 适用 |
+|------|----------|------|
+| 采购单生成 | https://ohmo-purchase-careooolv-d8gnyhzsnfe9e7356.webapps.tcloudbase.com | 门店订货 |
+| 成本利润测算 | https://ohmo-cost-careooolv-d8gnyhzsnfe9e7356.webapps.tcloudbase.com | 内部（含售价利润） |
+| 纯成本工具 | https://ohmo-simplecost-careooolv-d8gnyhzsnfe9e7356.webapps.tcloudbase.com | 外部（仅成本） |
 
-## React Compiler
+- 部署：CloudBase 静态托管（国内 CDN，手机普通浏览器/微信均可稳定访问）
+- 微信内置浏览器无法下载文件，页面已检测并引导用户「在浏览器打开」后导出
+- GitHub Pages 备份：https://careooolv.github.io/purchase-order-tool/（index/cost/simplecost.html）
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 开发
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev      # 本地开发
+npm run build    # 三入口构建（index/cost/simplecost）
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 构建
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- `vite.config.ts` 三入口：index.html / cost.html / simplecost.html
+- 部署目录：`cloudbase-deploy/{purchase,cost,simplecost}/`（各工具独立子域名）
