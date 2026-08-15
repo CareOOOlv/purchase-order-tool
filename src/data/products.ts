@@ -57,4 +57,13 @@ export const defaultProducts: Product[] = [
   { id: 45, name: "杏茶", price: 268, unit: "箱", quantity: 0, note: "一箱8瓶" },
   { id: 46, name: "芭乐上允", price: 232, unit: "箱", quantity: 0, note: "一箱8瓶" },
   { id: 47, name: "芭乐果酱", price: 328, unit: "箱", quantity: 0, note: "一箱8支" },
+  { id: 48, name: "树番茄上允", price: 132, unit: "箱", quantity: 0, note: "一箱6瓶" },
+  { id: 49, name: "小麦草冷冻原浆", price: 175, unit: "箱", quantity: 0, note: "一箱6瓶" },
+  { id: 50, name: "白薄荷莫林", price: 70, unit: "瓶", quantity: 0, note: "一瓶" },
+  { id: 51, name: "青梅上允", price: 160, unit: "箱", quantity: 0, note: "一箱6瓶" },
+  { id: 52, name: "啤酒花上允", price: 160, unit: "箱", quantity: 0, note: "一箱6瓶" },
+  { id: 53, name: "荔枝上允", price: 240, unit: "箱", quantity: 0, note: "一箱8瓶" },
+  { id: 54, name: "桑葚冷冻原浆", price: 338, unit: "箱", quantity: 0, note: "一箱12瓶" },
+  { id: 55, name: "百香果上允", price: 232, unit: "箱", quantity: 0, note: "一箱8瓶" },
+  { id: 56, name: "冷冻荔枝", price: 200, unit: "箱", quantity: 0, note: "一箱20斤" },
 ];

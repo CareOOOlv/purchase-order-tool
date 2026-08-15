@@ -474,7 +474,9 @@ export default function Cost() {
                     >
                       <TableCell className="text-center text-slate-500 text-xs sm:text-sm px-2 sm:px-4">{product.id}</TableCell>
                       <TableCell className="font-medium text-slate-800 text-xs sm:text-sm px-2 sm:px-4">{product.name}</TableCell>
-                      <TableCell className="text-red-600 tabular-nums text-xs sm:text-sm px-2 sm:px-4">{product.costPrice.toFixed(2)}</TableCell>
+                      <TableCell className="text-red-600 tabular-nums text-xs sm:text-sm px-2 sm:px-4">
+                        {product.costPending ? <span className="text-slate-300 font-normal">待补</span> : product.costPrice.toFixed(2)}
+                      </TableCell>
                       <TableCell className="text-slate-700 tabular-nums text-xs sm:text-sm px-2 sm:px-4">{product.salePrice.toFixed(2)}</TableCell>
                       <TableCell className="text-slate-700 text-xs sm:text-sm text-center px-2 sm:px-4">{product.unit}</TableCell>
                       <TableCell className="px-2 sm:px-4">
@@ -488,10 +490,10 @@ export default function Cost() {
                         />
                       </TableCell>
                       <TableCell className={`font-semibold text-xs sm:text-sm tabular-nums px-2 sm:px-4 ${product.costTotal > 0 ? "text-red-600" : "text-slate-400"}`}>
-                        {product.costTotal > 0 ? product.costTotal.toFixed(2) : "—"}
+                        {product.costPending ? <span className="text-slate-300 font-normal">待补</span> : (product.costTotal > 0 ? product.costTotal.toFixed(2) : "—")}
                       </TableCell>
                       <TableCell className={`font-semibold text-xs sm:text-sm tabular-nums px-2 sm:px-4 ${product.profit > 0 ? "text-green-600" : "text-slate-400"}`}>
-                        {product.profit > 0 ? `+${product.profit.toFixed(2)}` : "—"}
+                        {product.costPending ? <span className="text-slate-300 font-normal">待补</span> : (product.profit > 0 ? `+${product.profit.toFixed(2)}` : "—")}
                       </TableCell>
                       <TableCell className="text-slate-500 text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">{product.note}</TableCell>
                     </TableRow>
@@ -565,8 +567,8 @@ export default function Cost() {
                       <TableRow key={p.id}>
                         <TableCell className="text-xs font-medium">{p.name}</TableCell>
                         <TableCell className="text-xs">{p.quantity}</TableCell>
-                        <TableCell className="text-xs text-red-600">{p.costTotal.toFixed(2)}</TableCell>
-                        <TableCell className="text-xs text-green-600">+{p.profit.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs text-red-600">{p.costPending ? <span className="text-slate-300 font-normal">待补</span> : p.costTotal.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs text-green-600">{p.costPending ? <span className="text-slate-300 font-normal">待补</span> : `+${p.profit.toFixed(2)}`}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

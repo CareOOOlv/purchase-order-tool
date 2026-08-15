@@ -5,6 +5,7 @@ export interface SimpleCostProduct {
   unit: string;
   quantity: number;
   note: string;
+  costPending?: boolean; // true = 成本价待补（暂灰显）
 }
 
 export const defaultSimpleCostProducts: SimpleCostProduct[] = [
@@ -54,4 +55,14 @@ export const defaultSimpleCostProducts: SimpleCostProduct[] = [
   { id: 44, name: "杏茶", costPrice: 216, unit: "箱", quantity: 0, note: "" },
   { id: 45, name: "芭乐上允", costPrice: 200, unit: "箱", quantity: 0, note: "" },
   { id: 46, name: "芭乐果酱", costPrice: 324, unit: "箱", quantity: 0, note: "" },
+  // 新增商品（成本价待补，costPending 灰显）
+  { id: 47, name: "树番茄上允", costPrice: 0, unit: "箱", quantity: 0, note: "一箱6瓶", costPending: true },
+  { id: 48, name: "小麦草冷冻原浆", costPrice: 0, unit: "箱", quantity: 0, note: "一箱6瓶", costPending: true },
+  { id: 49, name: "白薄荷莫林", costPrice: 0, unit: "瓶", quantity: 0, note: "一瓶", costPending: true },
+  { id: 50, name: "青梅上允", costPrice: 0, unit: "箱", quantity: 0, note: "一箱6瓶", costPending: true },
+  { id: 51, name: "啤酒花上允", costPrice: 0, unit: "箱", quantity: 0, note: "一箱6瓶", costPending: true },
+  { id: 52, name: "荔枝上允", costPrice: 0, unit: "箱", quantity: 0, note: "一箱8瓶", costPending: true },
+  { id: 53, name: "桑葚冷冻原浆", costPrice: 0, unit: "箱", quantity: 0, note: "一箱12瓶", costPending: true },
+  { id: 54, name: "百香果上允", costPrice: 0, unit: "箱", quantity: 0, note: "一箱8瓶", costPending: true },
+  { id: 55, name: "冷冻荔枝", costPrice: 0, unit: "箱", quantity: 0, note: "一箱20斤", costPending: true },
 ];

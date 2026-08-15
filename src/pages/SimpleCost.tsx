@@ -385,13 +385,15 @@ export default function SimpleCost() {
                     <TableRow key={product.id} className={product.quantity > 0 ? "bg-emerald-50/40 hover:bg-emerald-50/60" : "hover:bg-slate-50/50"}>
                       <TableCell className="text-center text-slate-500 text-xs sm:text-sm px-2 sm:px-4">{product.id}</TableCell>
                       <TableCell className="font-medium text-slate-800 text-xs sm:text-sm px-2 sm:px-4">{product.name}</TableCell>
-                      <TableCell className="text-slate-700 tabular-nums text-xs sm:text-sm px-2 sm:px-4">{product.costPrice.toFixed(2)}</TableCell>
+                      <TableCell className="text-slate-700 tabular-nums text-xs sm:text-sm px-2 sm:px-4">
+                        {product.costPending ? <span className="text-slate-300 font-normal">待补</span> : product.costPrice.toFixed(2)}
+                      </TableCell>
                       <TableCell className="text-slate-700 text-xs sm:text-sm text-center px-2 sm:px-4">{product.unit}</TableCell>
                       <TableCell className="px-2 sm:px-4">
                         <Input type="number" min="0" value={product.quantity || ""} onChange={(e) => updateQuantity(product.id, e.target.value === "" ? 0 : Number(e.target.value))} placeholder="0" className="w-20 sm:w-28 h-10 sm:h-8 text-sm sm:text-base px-2" />
                       </TableCell>
                       <TableCell className={`font-semibold text-xs sm:text-sm tabular-nums px-2 sm:px-4 ${product.costTotal > 0 ? "text-emerald-700" : "text-slate-400"}`}>
-                        {product.costTotal > 0 ? product.costTotal.toFixed(2) : "—"}
+                        {product.costPending ? <span className="text-slate-300 font-normal">待补</span> : (product.costTotal > 0 ? product.costTotal.toFixed(2) : "—")}
                       </TableCell>
                       <TableCell className="text-slate-500 text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">{product.note}</TableCell>
                     </TableRow>
@@ -452,9 +454,9 @@ export default function SimpleCost() {
                     {products.filter((p) => p.quantity > 0).map((p) => (
                       <TableRow key={p.id}>
                         <TableCell className="text-xs font-medium">{p.name}</TableCell>
-                        <TableCell className="text-xs">{p.costPrice.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs">{p.costPending ? <span className="text-slate-300 font-normal">待补</span> : p.costPrice.toFixed(2)}</TableCell>
                         <TableCell className="text-xs">{p.quantity}</TableCell>
-                        <TableCell className="text-xs font-semibold text-emerald-700">{p.costTotal.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs font-semibold text-emerald-700">{p.costPending ? <span className="text-slate-300 font-normal">待补</span> : p.costTotal.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
