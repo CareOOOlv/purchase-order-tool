@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultProducts, type Product } from "@/data/products";
 import { parseOrderText } from "@/utils/parser";
 import { callApi, compressImage, fmtMoney } from "./api";
@@ -129,24 +129,23 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
 
   const applyParse = () => {
     const results = parseOrderText(pasteText);
-    let matched = 0;
+    const valid = results.filter(
+      (r) => r.productId != null && r.quantity != null && r.quantity > 0
+    );
+    if (valid.length === 0) {
+      setError("没有识别到有效商品，请检查文字格式（如：定制款草莓2箱）");
+      return;
+    }
     setRows((prev) => {
       const next = { ...prev };
-      for (const r of results) {
-        if (r.productId != null && r.quantity != null && r.quantity > 0) {
-          next[r.productId] = { qty: (next[r.productId]?.qty || 0) + r.quantity };
-          matched++;
-        }
+      for (const r of valid) {
+        next[r.productId!] = { qty: (next[r.productId!]?.qty || 0) + r.quantity! };
       }
       return next;
     });
-    if (matched === 0) {
-      setError("没有识别到有效商品，请检查文字格式（如：定制款草莓2箱）");
-    } else {
-      setError("");
-      setShowPaste(false);
-      setPasteText("");
-    }
+    setError("");
+    setShowPaste(false);
+    setPasteText("");
   };
 
   const pickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,7 +199,7 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
   };
 
   return (
-    <div className="pb-36">
+    <div className="pb-40">
       {/* 粘贴识别 */}
       <div className="bg-white px-4 py-3 border-b border-slate-100">
         <button
@@ -230,12 +229,12 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
       </div>
 
       {/* 搜索 */}
-      <div className="sticky top-0 z-10 bg-slate-50 px-4 py-2">
+      <div className="bg-slate-50 px-4 py-2">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="搜索商品名称 / 规格"
-          className="w-full border border-slate-300 rounded-full px-4 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-slate-300 rounded-full px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
@@ -244,19 +243,19 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
         {filtered.map((p) => {
           const row = rows[p.id];
           return (
-            <div key={p.id} className="py-3 flex items-center gap-3">
+            <div key={p.id} className="py-3.5 flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-slate-800 text-sm">{p.name}</div>
-                <div className="text-xs text-slate-400 mt-0.5">
+                <div className="font-medium text-slate-800 text-[15px]">{p.name}</div>
+                <div className="text-xs text-slate-400 mt-1">
                   {p.note ? p.note + " · " : ""}
-                  <span className="text-blue-600 font-medium">{fmtMoney(p.price)}/{p.unit}</span>
+                  <span className="text-blue-600 font-semibold">{fmtMoney(p.price)}/{p.unit}</span>
                 </div>
               </div>
               {row ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => setQty(p, row.qty - 1)}
-                    className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 text-lg leading-none active:bg-slate-300"
+                    className="w-9 h-9 rounded-full bg-slate-200 text-slate-700 text-xl leading-none active:bg-slate-300"
                   >−</button>
                   <input
                     value={row.qty}
@@ -265,17 +264,17 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
                       setQty(p, isNaN(v) ? 0 : v);
                     }}
                     inputMode="numeric"
-                    className="w-12 text-center border border-slate-300 rounded-md py-1 text-sm"
+                    className="w-14 text-center border border-slate-300 rounded-lg py-1.5 text-[15px] font-medium"
                   />
                   <button
                     onClick={() => setQty(p, row.qty + 1)}
-                    className="w-8 h-8 rounded-full bg-blue-600 text-white text-lg leading-none active:bg-blue-700"
+                    className="w-9 h-9 rounded-full bg-blue-600 text-white text-xl leading-none active:bg-blue-700"
                   >＋</button>
                 </div>
               ) : (
                 <button
                   onClick={() => setQty(p, 1)}
-                  className="px-4 py-1.5 rounded-full border border-blue-600 text-blue-600 text-sm font-medium active:bg-blue-50"
+                  className="px-5 py-2 rounded-full border border-blue-600 text-blue-600 text-sm font-medium active:bg-blue-50"
                 >
                   添加
                 </button>
@@ -296,7 +295,10 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
       )}
 
       {/* 底部：凭证 + 合计 + 提交（位于主 Tab 栏上方） */}
-      <div className="fixed bottom-[52px] left-0 right-0 bg-white border-t border-slate-200 px-4 pt-3 pb-3 z-20">
+      <div
+        className="fixed bottom-[54px] left-0 right-0 bg-white border-t border-slate-200 px-4 pt-3 z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.04)]"
+        style={{ paddingBottom: "calc(10px + env(safe-area-inset-bottom, 0px))" }}
+      >
         {/* 凭证 */}
         <div className="flex items-center gap-3 mb-3">
           <span className="text-sm text-slate-600 shrink-0">
@@ -321,15 +323,17 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
           <span className="text-xs text-slate-400">拍照或从相册选择</span>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickFile} />
         </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs text-slate-400">共 {selectedItems.reduce((s, i) => s + i.qty, 0)} 件 · {selectedItems.length} 种</div>
-            <div className="text-xl font-bold text-red-600">{fmtMoney(total)}</div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-xs text-slate-400">
+              共 {selectedItems.reduce((s, i) => s + i.qty, 0)} 件 · {selectedItems.length} 种商品
+            </div>
+            <div className="text-[22px] leading-tight font-bold text-red-600">{fmtMoney(total)}</div>
           </div>
           <button
             onClick={submit}
             disabled={submitting}
-            className="px-8 py-3 bg-red-600 text-white rounded-xl font-medium text-base disabled:opacity-50 active:bg-red-700"
+            className="px-8 py-3.5 bg-red-600 text-white rounded-xl font-semibold text-base disabled:opacity-50 active:bg-red-700 shrink-0"
           >
             {submitting ? "提交中..." : "提交订单"}
           </button>
@@ -369,7 +373,9 @@ function MyOrdersScreen({ store }: { store: StoreInfo }) {
     }
   };
 
-  if (orders === null && !loading) load();
+  useEffect(() => {
+    load();
+  }, []);
 
   return (
     <div className="p-4">
@@ -477,7 +483,10 @@ export default function App() {
       )}
 
       {/* 底部 Tab */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex z-30">
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex z-30"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
         {(
           [
             ["order", "🛒 下单"],
@@ -487,7 +496,7 @@ export default function App() {
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 py-3 text-sm font-medium ${
+            className={`flex-1 py-3.5 text-[15px] font-medium ${
               tab === key ? "text-blue-600" : "text-slate-400"
             }`}
           >

@@ -216,9 +216,9 @@ function OrdersScreen({ adminToken, stores }: { adminToken: string; stores: Stor
     <div>
       {/* 筛选栏 */}
       <div className="bg-white border-b border-slate-200 p-4 flex flex-wrap items-end gap-3">
-        <div>
+        <div className="w-[calc(50%-0.375rem)] sm:w-auto">
           <label className="block text-xs text-slate-500 mb-1">状态</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="border border-slate-300 rounded-md px-3 py-1.5 text-sm">
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full sm:w-auto border border-slate-300 rounded-md px-3 py-2 text-sm">
             <option value="">全部</option>
             <option value="submitted">已提交</option>
             <option value="confirmed">已确认</option>
@@ -226,30 +226,30 @@ function OrdersScreen({ adminToken, stores }: { adminToken: string; stores: Stor
             <option value="rejected">已驳回</option>
           </select>
         </div>
-        <div>
+        <div className="w-[calc(50%-0.375rem)] sm:w-auto">
           <label className="block text-xs text-slate-500 mb-1">门店</label>
-          <select value={storeId} onChange={(e) => setStoreId(e.target.value)} className="border border-slate-300 rounded-md px-3 py-1.5 text-sm">
+          <select value={storeId} onChange={(e) => setStoreId(e.target.value)} className="w-full sm:w-auto border border-slate-300 rounded-md px-3 py-2 text-sm">
             <option value="">全部</option>
             {stores.map((s) => (
               <option key={s._id} value={s._id}>{s.name}</option>
             ))}
           </select>
         </div>
-        <div>
+        <div className="w-[calc(50%-0.375rem)] sm:w-auto">
           <label className="block text-xs text-slate-500 mb-1">开始日期</label>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border border-slate-300 rounded-md px-3 py-1.5 text-sm" />
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full sm:w-auto border border-slate-300 rounded-md px-3 py-2 text-sm" />
         </div>
-        <div>
+        <div className="w-[calc(50%-0.375rem)] sm:w-auto">
           <label className="block text-xs text-slate-500 mb-1">结束日期</label>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border border-slate-300 rounded-md px-3 py-1.5 text-sm" />
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full sm:w-auto border border-slate-300 rounded-md px-3 py-2 text-sm" />
         </div>
-        <button onClick={load} className="bg-blue-600 text-white rounded-md px-4 py-1.5 text-sm font-medium">
+        <button onClick={load} className="flex-1 sm:flex-none bg-blue-600 text-white rounded-md px-5 py-2 text-sm font-medium">
           {loading ? "查询中..." : "查询"}
         </button>
-        <button onClick={exportXlsx} disabled={!orders?.length} className="bg-green-600 text-white rounded-md px-4 py-1.5 text-sm font-medium disabled:opacity-40">
+        <button onClick={exportXlsx} disabled={!orders?.length} className="flex-1 sm:flex-none bg-green-600 text-white rounded-md px-5 py-2 text-sm font-medium disabled:opacity-40">
           导出 xlsx
         </button>
-        <div className="ml-auto text-sm text-slate-600">
+        <div className="w-full sm:w-auto sm:ml-auto text-sm text-slate-600">
           共 {orders?.length || 0} 单 · 合计 <span className="font-bold text-red-600">{fmtMoney(totalAmount)}</span>
         </div>
       </div>
@@ -490,7 +490,7 @@ export default function App() {
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`px-6 py-3 text-sm font-medium border-b-2 ${
+            className={`flex-1 px-2 py-3.5 text-sm font-medium border-b-2 ${
               tab === key ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500"
             }`}
           >
