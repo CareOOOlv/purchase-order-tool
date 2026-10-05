@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultProducts, type Product } from "@/data/products";
 import { parseOrderText } from "@/utils/parser";
-import { callApi, compressImage, fmtMoney } from "./api";
+import { callApi, uploadVoucher, compressToBlob, fmtMoney } from "./api";
 
 interface StoreInfo {
   storeId: string;
@@ -93,8 +93,9 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
   const [search, setSearch] = useState("");
   const [pasteText, setPasteText] = useState("");
   const [showPaste, setShowPaste] = useState(false);
-  const [screenshot, setScreenshot] = useState<{ base64: string; name: string; preview: string } | null>(null);
+  const [screenshot, setScreenshot] = useState<{ file: File; preview: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState("");
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -153,12 +154,9 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
     if (!file) return;
     setError("");
     try {
-      const base64 = await compressImage(file);
-      setScreenshot({
-        base64,
-        name: file.name,
-        preview: `data:image/jpeg;base64,${base64}`,
-      });
+      // 只做压缩预览；真实上传发生在提交时（直传云存储）
+      const blob = await compressToBlob(file);
+      setScreenshot({ file, preview: URL.createObjectURL(blob) });
     } catch {
       setError("图片处理失败，请重试");
     }
@@ -177,15 +175,26 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
     }
     setSubmitting(true);
     setError("");
+    let fileId = "";
+    try {
+      setSubmitStatus("上传凭证中...");
+      fileId = await uploadVoucher(screenshot.file);
+    } catch (e: any) {
+      setSubmitting(false);
+      setSubmitStatus("");
+      setError(e?.message || "凭证上传失败，请重试");
+      return;
+    }
+    setSubmitStatus("提交订单中...");
     const res = await callApi<{ orderId: string }>({
       action: "createOrder",
       token: store.token,
       items: selectedItems,
       total,
-      screenshotBase64: screenshot.base64,
-      screenshotName: screenshot.name,
+      screenshotFileId: fileId,
     });
     setSubmitting(false);
+    setSubmitStatus("");
     if (res.success && res.data) {
       setRows({});
       setScreenshot(null);
@@ -194,7 +203,7 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
       await saveStore(null);
       location.reload();
     } else {
-      setError(res.error || "提交失败");
+      setError(res.error || "提交失败，请重试");
     }
   };
 
@@ -287,10 +296,15 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
         )}
       </div>
 
-      {/* 错误提示 */}
+      {/* 错误提示：固定悬浮在顶部栏下方，确保任何滚动位置都可见 */}
       {error && (
-        <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-          {error}
+        <div className="fixed top-[60px] left-0 right-0 z-40 px-4">
+          <div className="mx-auto max-w-md flex items-start justify-between gap-3 p-3 bg-red-600 text-white rounded-xl text-sm shadow-lg">
+            <span className="flex-1">⚠️ {error}</span>
+            <button onClick={() => setError("")} className="text-white/80 text-lg leading-none shrink-0 px-1">
+              ×
+            </button>
+          </div>
         </div>
       )}
 
@@ -335,7 +349,7 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
             disabled={submitting}
             className="px-8 py-3.5 bg-red-600 text-white rounded-xl font-semibold text-base disabled:opacity-50 active:bg-red-700 shrink-0"
           >
-            {submitting ? "提交中..." : "提交订单"}
+            {submitStatus || (submitting ? "提交中..." : "提交订单")}
           </button>
         </div>
       </div>

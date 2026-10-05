@@ -158,9 +158,12 @@ async function createOrder(p) {
 
   const total = cleanItems.reduce((s, it) => s + it.price * it.qty, 0);
 
-  const shot = String(p.screenshotBase64 || "");
-  if (!shot) return fail(400, "请上传转账凭证后再提交订单");
-  if (shot.length > 5.5 * 1024 * 1024) return fail(400, "图片过大，请重新拍摄或压缩后上传");
+  // 凭证由前端直传云存储（绕过网关请求体大小限制），这里只接收 fileID
+  const shotFileId = String(p.screenshotFileId || "");
+  if (!shotFileId) return fail(400, "请上传转账凭证后再提交订单");
+  if (!shotFileId.startsWith("cloud://") || shotFileId.length > 300) {
+    return fail(400, "凭证信息无效，请重新上传");
+  }
 
   // 订单号：OHMO + 北京时间日期 + 当日序号
   const dateStr = beijingDate();
@@ -170,19 +173,8 @@ async function createOrder(p) {
   let seq = (countRes.total || 0) + 1;
   let orderId = `OHMO${dateStr}${String(seq).padStart(4, "0")}`;
 
-  // 上传凭证
-  let fileId = "";
-  try {
-    const ext = String(p.screenshotName || "a.jpg").toLowerCase().endsWith(".png") ? "png" : "jpg";
-    const up = await app.uploadFile({
-      cloudPath: `fr-screenshots/${orderId}.${ext}`,
-      fileContent: Buffer.from(shot, "base64"),
-    });
-    fileId = up.fileID;
-  } catch (e) {
-    console.error("upload failed", e);
-    return fail(500, "凭证上传失败，请重试");
-  }
+  // 上传凭证已由前端直传，直接记录 fileID
+  const fileId = shotFileId;
 
   const createdAt = nowBeijing();
   const doc = {
