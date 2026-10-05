@@ -161,6 +161,34 @@ function OrdersScreen({ adminToken, stores }: { adminToken: string; stores: Stor
     }
   };
 
+  // 单笔订单导出（与旧版采购单工具格式一致，标题/文件名为门店名+日期）
+  const exportOrderExcel = (o: OrderDoc) => {
+    const dateStr = o.createdAt.split(" ")[0];
+    const title = `${o.storeName}_${dateStr}_采购单`;
+    const fileName = `${title}.xlsx`;
+    const wsData: (string | number)[][] = [];
+    wsData.push([title]);
+    wsData.push(["门店名称:", o.storeName, "", "日期:", dateStr]);
+    wsData.push([]);
+    wsData.push(["序号", "商品名称", "单价", "单位", "数量", "小计", "备注"]);
+    o.items.forEach((it, idx) => {
+      wsData.push([idx + 1, it.name, it.price, it.unit, it.qty, it.price * it.qty, ""]);
+    });
+    wsData.push([]);
+    wsData.push(["", "", "", "", "合计", o.total, ""]);
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [{ wch: 8 }, { wch: 24 }, { wch: 12 }, { wch: 8 }, { wch: 10 }, { wch: 14 }, { wch: 20 }];
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+      { s: { r: 1, c: 1 }, e: { r: 1, c: 2 } },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "采购单");
+    XLSX.writeFile(wb, fileName);
+  };
+
   const exportXlsx = () => {
     if (!orders || orders.length === 0) return;
     // Sheet1: SKU 明细
@@ -281,6 +309,9 @@ function OrdersScreen({ adminToken, stores }: { adminToken: string; stores: Stor
             <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={() => viewScreenshot(o)} className="px-3 py-1.5 rounded-md border border-slate-300 text-sm text-slate-700 hover:bg-slate-50">
                 查看凭证
+              </button>
+              <button onClick={() => exportOrderExcel(o)} className="px-3 py-1.5 rounded-md border border-green-300 text-green-700 text-sm hover:bg-green-50">
+                导出采购单
               </button>
               {o.status === "submitted" && (
                 <button onClick={() => updateStatus(o, "confirmed")} className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm">
