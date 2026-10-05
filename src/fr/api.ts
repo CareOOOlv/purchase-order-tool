@@ -23,31 +23,6 @@ export async function callApi<T = any>(
   }
 }
 
-// ==================== CloudBase 云存储直传（绕过网关请求体限制） ====================
-
-const CB_ENV = "careooolv-d8gnyhzsnfe9e7356";
-const CB_REGION = "ap-shanghai";
-
-let cbAppPromise: Promise<any> | null = null;
-
-function getCbApp(): Promise<any> {
-  if (!cbAppPromise) {
-    cbAppPromise = (async () => {
-      const cloudbase = (await import("@cloudbase/js-sdk")).default;
-      const accessKey = import.meta.env.VITE_PUBLISHABLE_KEY as string;
-      if (!accessKey) throw new Error("缺少云环境配置");
-      const app = cloudbase.init({
-        env: CB_ENV,
-        region: CB_REGION,
-        accessKey,
-        auth: { detectSessionInUrl: true },
-      });
-      return app;
-    })();
-  }
-  return cbAppPromise;
-}
-
 /** 压缩图片为 JPEG Blob：最长边 1600px，质量 0.8 */
 export function compressToBlob(file: File, maxSide = 1600, quality = 0.8): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -82,27 +57,65 @@ export function compressToBlob(file: File, maxSide = 1600, quality = 0.8): Promi
   });
 }
 
-/** 匿名登录并直传凭证到云存储，返回 fileID（订单接口只传这个短字符串） */
-export async function uploadVoucher(file: File): Promise<string> {
-  const app = await getCbApp();
-  const auth = app.auth;
-  try {
-    const { data } = await auth.getSession();
-    if (!data?.session) {
-      const { error } = await auth.signInAnonymously();
-      if (error) throw new Error("登录云服务失败：" + (error.message || "请稍后重试"));
-    }
-  } catch (e: any) {
-    throw new Error("登录云服务失败，请稍后重试");
-  }
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = () => reject(new Error("文件读取失败"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+/**
+ * 分片上传凭证：压缩后切成 <32KB 的分片依次过 HTTP 网关，
+ * 云函数在服务端拼装并上传云存储，返回 fileID。
+ * 不依赖任何浏览器直连（兼容任意部署域名，包括微信内打开）。
+ */
+export async function uploadVoucher(
+  token: string,
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<string> {
   const blob = await compressToBlob(file);
-  const cloudPath = `fr-screenshots/${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2, 8)}.jpg`;
-  const res = await app.uploadFile({ cloudPath, filePath: blob });
-  const fileID = res?.fileID;
-  if (!fileID) throw new Error("凭证上传失败，请重试");
-  return fileID as string;
+  const b64 = await blobToBase64(blob);
+
+  // 1. 初始化，拿 uploadId
+  const init = await callApi<{ uploadId: string }>({
+    action: "initVoucherUpload",
+    token,
+    totalBase64: b64.length,
+  });
+  if (!init.success || !init.data) throw new Error(init.error || "凭证上传初始化失败");
+  const uploadId = init.data.uploadId;
+
+  // 2. 分片推送（每片失败自动重试 2 次）
+  const CHUNK = 24000; // base64 字符数/片，请求体 <32KB
+  const total = Math.ceil(b64.length / CHUNK);
+  for (let seq = 0; seq < total; seq++) {
+    const data = b64.slice(seq * CHUNK, (seq + 1) * CHUNK);
+    let done = false;
+    for (let retry = 0; retry < 3 && !done; retry++) {
+      const r = await callApi({
+        action: "pushVoucherChunk",
+        token,
+        uploadId,
+        seq,
+        data,
+      });
+      if (r.success) done = true;
+      else if (retry === 2) throw new Error(r.error || "凭证上传失败，请重试");
+    }
+    onProgress?.(Math.round(((seq + 1) / total) * 100));
+  }
+
+  // 3. 完成拼装，换取 fileID
+  const fin = await callApi<{ fileId: string }>({
+    action: "finalizeVoucherUpload",
+    token,
+    uploadId,
+  });
+  if (!fin.success || !fin.data) throw new Error(fin.error || "凭证上传失败，请重试");
+  return fin.data.fileId;
 }
 
 export function fmtMoney(n: number): string {

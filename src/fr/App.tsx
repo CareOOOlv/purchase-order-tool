@@ -177,8 +177,9 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
     setError("");
     let fileId = "";
     try {
-      setSubmitStatus("上传凭证中...");
-      fileId = await uploadVoucher(screenshot.file);
+      fileId = await uploadVoucher(store.token, screenshot.file, (pct) =>
+        setSubmitStatus(`上传凭证中 ${pct}%`)
+      );
     } catch (e: any) {
       setSubmitting(false);
       setSubmitStatus("");

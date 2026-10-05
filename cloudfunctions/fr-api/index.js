@@ -7,6 +7,7 @@ const _ = db.command;
 const storesCol = db.collection("fr_stores");
 const ordersCol = db.collection("fr_orders");
 const configCol = db.collection("fr_config");
+const uploadsCol = db.collection("fr_uploads");
 
 const TOKEN_SECRET = process.env.FR_TOKEN_SECRET || "ohmo-fr-token-secret-2026-x9k2";
 const DEFAULT_ADMIN_PASSWORD = "ohmo2026";
@@ -216,8 +217,83 @@ async function createOrder(p) {
   return fail(500, "订单号生成冲突，请重试");
 }
 
-async function listMyOrders(p) {
+// ==================== 凭证分片上传（绕过网关请求体限制） ====================
+
+async function initVoucherUpload(p) {
   const storeId = verifyToken(p.token);
+  if (!storeId) return fail(401, "登录已过期，请重新输入门店码");
+  const total = Number(p.totalBase64) || 0;
+  if (total <= 0 || total > 6 * 1024 * 1024) return fail(400, "图片大小无效");
+
+  // 顺手清理 1 天前的半途而废的分片
+  try {
+    await uploadsCol.where({ createdAtMs: _.lt(Date.now() - 24 * 3600 * 1000) }).remove();
+  } catch (e) { /* 忽略清理失败 */ }
+
+  const uploadId = crypto.randomBytes(12).toString("hex");
+  await uploadsCol.add({
+    uploadId,
+    storeId,
+    parts: {},
+    totalBase64: total,
+    createdAtMs: Date.now(),
+  });
+  return ok({ uploadId });
+}
+
+async function pushVoucherChunk(p) {
+  const storeId = verifyToken(p.token);
+  if (!storeId) return fail(401, "登录已过期，请重新输入门店码");
+  const uploadId = String(p.uploadId || "");
+  const seq = Number(p.seq);
+  const data = String(p.data || "");
+  if (!uploadId || !Number.isInteger(seq) || seq < 0 || seq > 500) return fail(400, "分片参数无效");
+  if (!data || data.length > 30000 || !/^[A-Za-z0-9+/=]+$/.test(data)) return fail(400, "分片数据无效");
+  const res = await uploadsCol.where({ uploadId, storeId }).update({
+    [`parts.${seq}`]: data,
+  });
+  if (!res.updated) return fail(404, "上传会话不存在，请重新提交");
+  return ok({});
+}
+
+async function finalizeVoucherUpload(p) {
+  const storeId = verifyToken(p.token);
+  if (!storeId) return fail(401, "登录已过期，请重新输入门店码");
+  const uploadId = String(p.uploadId || "");
+  const res = await uploadsCol.where({ uploadId, storeId }).get();
+  const doc = res.data && res.data[0];
+  if (!doc) return fail(404, "上传会话不存在，请重新提交");
+
+  const seqs = Object.keys(doc.parts || {}).map(Number).sort((a, b) => a - b);
+  if (seqs.length === 0) return fail(400, "没有收到分片数据，请重新提交");
+  let b64 = "";
+  for (const s of seqs) b64 += doc.parts[s];
+  if (b64.length < 100) return fail(400, "凭证数据异常，请重新上传");
+  // 校验连续性：序列号应从 0 连续递增
+  for (let i = 0; i < seqs.length; i++) {
+    if (seqs[i] !== i) return fail(400, "分片不完整，请重新提交");
+  }
+
+  const buf = Buffer.from(b64, "base64");
+  if (buf.length < 1024 || buf.length > 6 * 1024 * 1024) return fail(400, "凭证大小异常，请重新上传");
+  const ext = buf[0] === 0x89 && buf[1] === 0x50 ? "png" : "jpg";
+
+  let fileId = "";
+  try {
+    const up = await app.uploadFile({
+      cloudPath: `fr-screenshots/${uploadId}.${ext}`,
+      fileContent: buf,
+    });
+    fileId = up.fileID;
+  } catch (e) {
+    console.error("voucher upload failed", e);
+    return fail(500, "凭证保存失败，请重试");
+  }
+  try { await uploadsCol.doc(doc._id).remove(); } catch (e) { /* 忽略 */ }
+  return ok({ fileId });
+}
+
+async function listMyOrders(p) {  const storeId = verifyToken(p.token);
   if (!storeId) return fail(401, "登录已过期，请重新输入门店码");
   const res = await ordersCol
     .where({ storeId })
@@ -363,6 +439,12 @@ exports.main = async (event) => {
         return await validateStore(p);
       case "createOrder":
         return await createOrder(p);
+      case "initVoucherUpload":
+        return await initVoucherUpload(p);
+      case "pushVoucherChunk":
+        return await pushVoucherChunk(p);
+      case "finalizeVoucherUpload":
+        return await finalizeVoucherUpload(p);
       case "listMyOrders":
         return await listMyOrders(p);
       case "adminLogin":
