@@ -1,0 +1,9 @@
+{
+  "name": "fr-api",
+  "version": "1.0.0",
+  "description": "OHMO 加盟商订货系统 API：门店码绑定/下单/凭证上传/管理端",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.4.4"
+  }
+}
