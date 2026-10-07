@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { defaultProducts, type Product } from "@/data/products";
+import {
+  defaultProducts,
+  STARRED_NOTICE,
+  CUPS_NOTICE,
+  KAMILK_NOTICE,
+  validateOrderRules,
+  type Product,
+} from "@/data/products";
 import { parseOrderText } from "@/utils/parser";
 import { callApi, uploadVoucher, compressToBlob, fmtMoney } from "./api";
 
@@ -169,6 +176,13 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
       setError("请先选择商品");
       return;
     }
+    // 起订规则校验（带*冷冻品满30瓶 / 咖奶5箱 / 杯盖类合计2箱）
+    const ruleError = validateOrderRules(selectedItems.map((it) => ({ productId: it.id, qty: it.qty })));
+    if (ruleError) {
+      setError(ruleError);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     if (!screenshot) {
       setError("请上传转账凭证后再提交订单");
       return;
@@ -248,6 +262,16 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
         />
       </div>
 
+      {/* 表头起订规则提醒 */}
+      <div className="px-4 pt-3">
+        <div className="bg-red-50 border border-red-300 rounded-xl p-3 text-[13px] leading-relaxed">
+          <div className="font-bold text-red-600">⚠️ 起订规则（请务必阅读）</div>
+          <div className="text-red-600 mt-1 font-medium">★ {STARRED_NOTICE}</div>
+          <div className="text-red-500 mt-0.5">· {KAMILK_NOTICE}</div>
+          <div className="text-red-500 mt-0.5">· {CUPS_NOTICE}</div>
+        </div>
+      </div>
+
       {/* 商品列表 */}
       <div className="px-4 divide-y divide-slate-100">
         {filtered.map((p) => {
@@ -255,8 +279,11 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
           return (
             <div key={p.id} className="py-3.5 flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-slate-800 text-[15px]">{p.name}</div>
-                <div className="text-xs text-slate-400 mt-1">
+                <div className="font-medium text-slate-800 text-[15px]">
+                  {p.name}
+                  {p.starred && <span className="text-red-600 font-bold ml-0.5">*</span>}
+                </div>
+                <div className={`text-xs mt-1 ${p.starred ? "text-red-500 font-medium" : "text-slate-400"}`}>
                   {p.note ? p.note + " · " : ""}
                   <span className="text-blue-600 font-semibold">{fmtMoney(p.price)}/{p.unit}</span>
                 </div>
@@ -337,6 +364,10 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
           )}
           <span className="text-xs text-slate-400">拍照或从相册选择</span>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickFile} />
+        </div>
+        {/* 末尾起订提醒 */}
+        <div className="mb-2 text-[11px] leading-snug text-red-500 font-medium">
+          ★ {STARRED_NOTICE}；{KAMILK_NOTICE}；杯盖四品合计满 2 箱起订（整箱）
         </div>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

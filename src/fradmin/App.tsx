@@ -189,6 +189,34 @@ function OrdersScreen({ adminToken, stores }: { adminToken: string; stores: Stor
     XLSX.writeFile(wb, fileName);
   };
 
+  // 单笔订单导出纯数量单（无单价/金额，供仓库拣货/对数用）
+  const exportOrderQtyExcel = (o: OrderDoc) => {
+    const dateStr = o.createdAt.split(" ")[0];
+    const title = `${o.storeName}_${dateStr}_数量单`;
+    const fileName = `${title}.xlsx`;
+    const wsData: (string | number)[][] = [];
+    wsData.push([title]);
+    wsData.push(["门店名称:", o.storeName, "", "日期:", dateStr]);
+    wsData.push([]);
+    wsData.push(["序号", "商品名称", "单位", "数量", "备注"]);
+    o.items.forEach((it, idx) => {
+      wsData.push([idx + 1, it.name, it.unit, it.qty, ""]);
+    });
+    wsData.push([]);
+    wsData.push(["", "合计", "", o.items.reduce((s, i) => s + i.qty, 0), ""]);
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [{ wch: 8 }, { wch: 24 }, { wch: 8 }, { wch: 10 }, { wch: 20 }];
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+      { s: { r: 1, c: 1 }, e: { r: 1, c: 2 } },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "数量单");
+    XLSX.writeFile(wb, fileName);
+  };
+
   const exportXlsx = () => {
     if (!orders || orders.length === 0) return;
     // Sheet1: SKU 明细
@@ -238,6 +266,51 @@ function OrdersScreen({ adminToken, stores }: { adminToken: string; stores: Stor
     XLSX.writeFile(wb, `OHMO订货单_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
+  // 批量导出纯数量单（无单价/金额列）
+  const exportQtyXlsx = () => {
+    if (!orders || orders.length === 0) return;
+    // Sheet1: SKU 明细（纯数量）
+    const rows: any[] = [];
+    orders.forEach((o) => {
+      o.items.forEach((it) => {
+        rows.push({
+          订单号: o.orderId,
+          门店: o.storeName,
+          下单时间: o.createdAt,
+          商品: it.name,
+          数量: it.qty,
+          单位: it.unit,
+          状态: o.statusLabel,
+        });
+      });
+      rows.push({
+        订单号: o.orderId,
+        门店: o.storeName,
+        下单时间: o.createdAt,
+        商品: "—— 合计 ——",
+        数量: o.items.reduce((s, i) => s + i.qty, 0),
+        单位: "",
+        状态: o.statusLabel,
+      });
+    });
+    const ws1 = XLSX.utils.json_to_sheet(rows);
+    // Sheet2: 订单汇总（纯数量）
+    const summary = orders.map((o) => ({
+      订单号: o.orderId,
+      门店: o.storeName,
+      下单时间: o.createdAt,
+      商品种类: o.items.length,
+      总件数: o.items.reduce((s, i) => s + i.qty, 0),
+      状态: o.statusLabel,
+      备注: o.remark,
+    }));
+    const ws2 = XLSX.utils.json_to_sheet(summary);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws1, "订货明细(纯数量)");
+    XLSX.utils.book_append_sheet(wb, ws2, "订单汇总(纯数量)");
+    XLSX.writeFile(wb, `OHMO数量单_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   const totalAmount = orders?.reduce((s, o) => s + o.total, 0) || 0;
 
   return (
@@ -275,7 +348,10 @@ function OrdersScreen({ adminToken, stores }: { adminToken: string; stores: Stor
           {loading ? "查询中..." : "查询"}
         </button>
         <button onClick={exportXlsx} disabled={!orders?.length} className="flex-1 sm:flex-none bg-green-600 text-white rounded-md px-5 py-2 text-sm font-medium disabled:opacity-40">
-          导出 xlsx
+          导出订货单
+        </button>
+        <button onClick={exportQtyXlsx} disabled={!orders?.length} className="flex-1 sm:flex-none bg-teal-600 text-white rounded-md px-5 py-2 text-sm font-medium disabled:opacity-40">
+          导出数量单
         </button>
         <div className="w-full sm:w-auto sm:ml-auto text-sm text-slate-600">
           共 {orders?.length || 0} 单 · 合计 <span className="font-bold text-red-600">{fmtMoney(totalAmount)}</span>
@@ -312,6 +388,9 @@ function OrdersScreen({ adminToken, stores }: { adminToken: string; stores: Stor
               </button>
               <button onClick={() => exportOrderExcel(o)} className="px-3 py-1.5 rounded-md border border-green-300 text-green-700 text-sm hover:bg-green-50">
                 导出采购单
+              </button>
+              <button onClick={() => exportOrderQtyExcel(o)} className="px-3 py-1.5 rounded-md border border-teal-300 text-teal-700 text-sm hover:bg-teal-50">
+                导出数量单
               </button>
               {o.status === "submitted" && (
                 <button onClick={() => updateStatus(o, "confirmed")} className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm">

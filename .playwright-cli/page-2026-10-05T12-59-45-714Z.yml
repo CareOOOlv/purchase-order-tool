@@ -1,0 +1,9 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]: OHMO 冰奶
+    - generic [ref=e7]: 加盟商订货工具
+  - generic [ref=e8]:
+    - generic [ref=e9]: 门店码
+    - textbox "请输入品牌方分配的门店码" [ref=e10]
+    - button "进入订货" [disabled] [ref=e11]
+  - generic [ref=e12]: 没有门店码？请联系品牌方获取

@@ -137,6 +137,51 @@ async function validateStore(p) {
   return ok({ storeId: store._id, storeName: store.name });
 }
 
+// ==================== 起订规则（与 src/data/products.ts 保持一致） ====================
+// 带*冷冻品：id 25 芒果(12瓶/箱) 26 红苹果(12) 28 定制石榴汁(按瓶=1) 29 凤梨(12) 49 小麦草(6)
+const FROZEN_BOTTLES_PER = { 25: 12, 26: 12, 28: 1, 29: 12, 49: 6 };
+const KAMILK_ID = 44;           // 咖奶：5箱起订
+const CUPS_IDS = [14, 15, 16, 17]; // 直饮盖/拱盖/500杯/700杯：合计满2箱起订（整箱）
+
+function validateOrderRules(cleanItems) {
+  // 规则1：带*冷冻品合计满 30 瓶（一件不订则不触发）
+  let frozenBottles = 0;
+  const frozenNames = [];
+  for (const it of cleanItems) {
+    const per = FROZEN_BOTTLES_PER[it.productId];
+    if (per && it.qty > 0) {
+      frozenBottles += it.qty * per;
+      frozenNames.push(it.name);
+    }
+  }
+  if (frozenBottles > 0 && frozenBottles < 30) {
+    return `带 * 冷冻品（${frozenNames.join("、")}）合计 ${frozenBottles} 瓶，不满 30 瓶无法发货，还需 ${30 - frozenBottles} 瓶`;
+  }
+
+  // 规则2：咖奶 5 箱起订
+  const km = cleanItems.find((it) => it.productId === KAMILK_ID && it.qty > 0);
+  if (km) {
+    if (!Number.isInteger(km.qty)) return "咖奶请按整箱数量下单";
+    if (km.qty < 5) return `咖奶 5 箱起订，当前 ${km.qty} 箱`;
+  }
+
+  // 规则3：杯盖四品合计满 2 箱（整箱，不接受拼箱）
+  let cupsQty = 0;
+  const cupNames = [];
+  for (const it of cleanItems) {
+    if (CUPS_IDS.includes(it.productId) && it.qty > 0) {
+      if (!Number.isInteger(it.qty)) return `${it.name} 请按整箱数量下单（不接受拼箱）`;
+      cupsQty += it.qty;
+      cupNames.push(it.name);
+    }
+  }
+  if (cupsQty > 0 && cupsQty < 2) {
+    return `透明直饮盖 / 透明拱盖 / 透明500冷饮杯 / 透明700冷饮杯 合计满 2 箱起订，当前合计 ${cupsQty} 箱`;
+  }
+
+  return null;
+}
+
 async function createOrder(p) {
   const storeId = verifyToken(p.token);
   if (!storeId) return fail(401, "登录已过期，请重新输入门店码");
@@ -156,6 +201,10 @@ async function createOrder(p) {
     }))
     .filter((it) => it.name && it.qty > 0);
   if (cleanItems.length === 0) return fail(400, "订单明细为空");
+
+  // 起订规则校验（服务端兜底，与前端同款规则）
+  const ruleError = validateOrderRules(cleanItems);
+  if (ruleError) return fail(400, ruleError);
 
   const total = cleanItems.reduce((s, it) => s + it.price * it.qty, 0);
 
