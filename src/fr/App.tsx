@@ -223,7 +223,10 @@ function OrderScreen({ store, onSubmitted }: { store: StoreInfo; onSubmitted: (o
   };
 
   return (
-    <div className="pb-40">
+    <div
+      className="pt-1"
+      style={{ paddingBottom: "calc(300px + env(safe-area-inset-bottom, 0px))" }}
+    >
       {/* 粘贴识别 */}
       <div className="bg-white px-4 py-3 border-b border-slate-100">
         <button
