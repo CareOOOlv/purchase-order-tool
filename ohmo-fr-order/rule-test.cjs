@@ -59,6 +59,15 @@ check("4项各1箱=4箱→pass", validateOrderRules([P(14, 1), P(15, 1), P(16, 1
 check("冷冻荔枝(20斤/箱)不在规则内", validateOrderRules([P(56, 1)]) === null);
 check("冷冻品+咖奶同时不满足→报冷冻", (validateOrderRules([P(25, 1), P(44, 2)]) || "").includes("瓶"));
 
+// ---- 新品：1L杯/盖/贴纸 ----
+check("parse 1L装杯子2箱", (() => { const r = parseOrderText("1L装杯子2箱")[0]; return r.productId === 57 && r.quantity === 2; })());
+check("parse 1L盖子2箱", (() => { const r = parseOrderText("1L盖子2箱")[0]; return r.productId === 58 && r.quantity === 2; })());
+check("parse 1L杯贴纸3套", (() => { const r = parseOrderText("1L杯贴纸3套")[0]; return r.productId === 59 && r.quantity === 3; })());
+check("1L杯不带盖→blocked", (validateOrderRules([P(57, 2)]) || "").includes("1L盖子"));
+check("1L盖不带杯→blocked", (validateOrderRules([P(58, 2)]) || "").includes("1L装杯子"));
+check("1L杯+盖→pass", validateOrderRules([P(57, 2), P(58, 2)]) === null);
+check("贴纸不参与搭配规则", validateOrderRules([P(59, 3)]) === null);
+
 // ---- 服务端同款逻辑（从云函数源码提取） ----
 const fs = require("fs");
 const src = fs.readFileSync("D:/workbuddy storage/2026-10-05-14-30-24/purchase-order-tool/cloudfunctions/fr-api/index.js", "utf8");
@@ -75,6 +84,8 @@ check("SR 咖奶3箱→blocked", (serverFn([mkServer(44, 3, "咖奶")]) || "").i
 check("SR 杯盖1箱→blocked", serverFn([mkServer(16, 1, "透明500冷饮杯")]) !== null);
 check("SR 杯盖2箱→pass", serverFn([mkServer(14, 1, "透明拱盖"), mkServer(16, 1, "透明500冷饮杯")]) === null);
 check("SR 不订触发品→pass", serverFn([mkServer(30, 1, "牛奶")]) === null);
+check("SR 1L杯不带盖→blocked", (serverFn([mkServer(57, 2, "1L装杯子")]) || "").includes("1L盖子"));
+check("SR 1L杯+盖→pass", serverFn([mkServer(57, 2, "1L装杯子"), mkServer(58, 2, "1L盖子")]) === null);
 
 console.log(`\n===== ${pass} passed, ${failCount} failed =====`);
 process.exit(failCount ? 1 : 0);

@@ -142,6 +142,8 @@ async function validateStore(p) {
 const FROZEN_BOTTLES_PER = { 25: 12, 26: 12, 28: 1, 29: 12, 49: 6 };
 const KAMILK_ID = 44;           // 咖奶：5箱起订
 const CUPS_IDS = [14, 15, 16, 17]; // 直饮盖/拱盖/500杯/700杯：合计满2箱起订（整箱）
+const CUP_1L_ID = 57;           // 1L装杯子 / 1L盖子：需搭配下单
+const LID_1L_ID = 58;
 
 function validateOrderRules(cleanItems) {
   // 规则1：带*冷冻品合计满 30 瓶（一件不订则不触发）
@@ -178,6 +180,12 @@ function validateOrderRules(cleanItems) {
   if (cupsQty > 0 && cupsQty < 2) {
     return `透明直饮盖 / 透明拱盖 / 透明500冷饮杯 / 透明700冷饮杯 合计满 2 箱起订，当前合计 ${cupsQty} 箱`;
   }
+
+  // 规则4：1L装杯子与1L盖子需搭配下单
+  const hasCup1L = cleanItems.some((it) => it.productId === CUP_1L_ID && it.qty > 0);
+  const hasLid1L = cleanItems.some((it) => it.productId === LID_1L_ID && it.qty > 0);
+  if (hasCup1L && !hasLid1L) return "1L装杯子需搭配 1L盖子 一起下单，请同时订购";
+  if (hasLid1L && !hasCup1L) return "1L盖子需搭配 1L装杯子 一起下单，请同时订购";
 
   return null;
 }

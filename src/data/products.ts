@@ -14,8 +14,9 @@ export interface Product {
    * - frozen30: 带*冷冻品，合计满 30 瓶起订（不满 30 瓶无法发货；一件不订则不触发）
    * - kamilk5:  咖奶 5 箱起订
    * - cups2:    直饮盖/拱盖/500杯/700杯 合计满 2 箱起订（整箱，不接受拼箱）
+   * - cupLid:   1L装杯子与1L盖子需搭配下单（订其一必须同时订另一个）
    */
-  minRule?: "frozen30" | "kamilk5" | "cups2";
+  minRule?: "frozen30" | "kamilk5" | "cups2" | "cupLid";
 }
 
 /** 带*产品红字提醒文案（表头、商品备注、底部栏共用） */
@@ -84,6 +85,9 @@ export const defaultProducts: Product[] = [
   { id: 54, name: "桑葚冷冻原浆", price: 338, unit: "箱", quantity: 0, note: "一箱12瓶" },
   { id: 55, name: "百香果上允", price: 232, unit: "箱", quantity: 0, note: "一箱8瓶" },
   { id: 56, name: "冷冻荔枝", price: 200, unit: "箱", quantity: 0, note: "一箱20斤" },
+  { id: 57, name: "1L装杯子", price: 288, unit: "箱", quantity: 0, note: "一箱600个 · 需搭配订1L盖子", minRule: "cupLid" },
+  { id: 58, name: "1L盖子", price: 72, unit: "箱", quantity: 0, note: "一箱600个 · 需搭配订1L装杯子", minRule: "cupLid" },
+  { id: 59, name: "1L杯贴纸", price: 108, unit: "套", quantity: 0, note: "一套900张" },
 ];
 
 // ==================== 起订规则校验（客户端与服务端共用逻辑说明） ====================
@@ -126,6 +130,12 @@ export function validateOrderRules(
   if (cupsQty > 0 && cupsQty < 2) {
     return `透明直饮盖 / 透明拱盖 / 透明500冷饮杯 / 透明700冷饮杯 合计满 2 箱起订，当前合计 ${cupsQty} 箱`;
   }
+
+  // 规则4：1L装杯子与1L盖子需搭配下单
+  const cup1L = items.find((it) => it.productId === 57 && it.qty > 0);
+  const lid1L = items.find((it) => it.productId === 58 && it.qty > 0);
+  if (cup1L && !lid1L) return "1L装杯子需搭配 1L盖子 一起下单，请同时订购";
+  if (lid1L && !cup1L) return "1L盖子需搭配 1L装杯子 一起下单，请同时订购";
 
   return null;
 }
