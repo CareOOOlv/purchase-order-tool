@@ -67,6 +67,12 @@ check("1L杯不带盖→blocked", (validateOrderRules([P(57, 2)]) || "").include
 check("1L盖不带杯→blocked", (validateOrderRules([P(58, 2)]) || "").includes("1L装杯子"));
 check("1L杯+盖→pass", validateOrderRules([P(57, 2), P(58, 2)]) === null);
 check("贴纸不参与搭配规则", validateOrderRules([P(59, 3)]) === null);
+check("parse 工服冬装5件", (() => { const r = parseOrderText("工服冬装5件")[0]; return r.productId === 60 && r.quantity === 5; })());
+check("parse 工服3件(别名)", (() => { const r = parseOrderText("工服3件")[0]; return r.productId === 60 && r.quantity === 3; })());
+{
+  const p = defaultProducts.find((x) => x.id === 60);
+  check("工服冬装 110/件+备注", p?.price === 110 && p?.unit === "件" && p?.note === "定制1-2周到货");
+}
 
 // ---- 服务端同款逻辑（从云函数源码提取） ----
 const fs = require("fs");

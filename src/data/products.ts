@@ -88,6 +88,7 @@ export const defaultProducts: Product[] = [
   { id: 57, name: "1L装杯子", price: 288, unit: "箱", quantity: 0, note: "一箱600个 · 需搭配订1L盖子", minRule: "cupLid" },
   { id: 58, name: "1L盖子", price: 72, unit: "箱", quantity: 0, note: "一箱600个 · 需搭配订1L装杯子", minRule: "cupLid" },
   { id: 59, name: "1L杯贴纸", price: 108, unit: "套", quantity: 0, note: "一套900张" },
+  { id: 60, name: "工服冬装", price: 110, unit: "件", quantity: 0, note: "定制1-2周到货" },
 ];
 
 // ==================== 起订规则校验（客户端与服务端共用逻辑说明） ====================
