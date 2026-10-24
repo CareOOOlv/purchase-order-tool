@@ -15,12 +15,13 @@ export interface Product {
    * - kamilk5:  咖奶 5 箱起订
    * - cups2:    直饮盖/拱盖/500杯/700杯 合计满 2 箱起订（整箱，不接受拼箱）
    * - cupLid:   1L装杯子与1L盖子需搭配下单（订其一必须同时订另一个）
+   * - bulei6:   布蕾粉 6 袋起订（单品）
    */
-  minRule?: "frozen30" | "kamilk5" | "cups2" | "cupLid";
+  minRule?: "frozen30" | "kamilk5" | "cups2" | "cupLid" | "bulei6";
 }
 
 /** 带*产品红字提醒文案（表头、商品备注、底部栏共用） */
-export const STARRED_NOTICE = "带 * 产品每单合计需满 30 瓶起订，不满 30 瓶无法发货";
+export const STARRED_NOTICE = "带 * 产品每单合计需满 30 瓶（包）起订，不满 30 无法发货";
 
 export const CUPS_NOTICE = "透明直饮盖 / 透明拱盖 / 透明500冷饮杯 / 透明700冷饮杯 合计满 2 箱起订（整箱）";
 export const KAMILK_NOTICE = "咖奶 5 箱起订";
@@ -89,6 +90,8 @@ export const defaultProducts: Product[] = [
   { id: 58, name: "1L盖子", price: 72, unit: "箱", quantity: 0, note: "一箱600个 · 需搭配订1L装杯子", minRule: "cupLid" },
   { id: 59, name: "1L杯贴纸", price: 108, unit: "套", quantity: 0, note: "一套900张" },
   { id: 60, name: "工服冬装", price: 110, unit: "件", quantity: 0, note: "定制1-2周到货" },
+  { id: 61, name: "芝士粉", price: 39, unit: "包", quantity: 0, note: "按包计价 · 带*每单合计满30瓶(包)起订", starred: true, bottlesPerBox: 1, minRule: "frozen30" },
+  { id: 62, name: "布蕾粉", price: 22, unit: "袋", quantity: 0, note: "6袋起订", minRule: "bulei6" },
 ];
 
 // ==================== 起订规则校验（客户端与服务端共用逻辑说明） ====================
@@ -137,6 +140,12 @@ export function validateOrderRules(
   const lid1L = items.find((it) => it.productId === 58 && it.qty > 0);
   if (cup1L && !lid1L) return "1L装杯子需搭配 1L盖子 一起下单，请同时订购";
   if (lid1L && !cup1L) return "1L盖子需搭配 1L装杯子 一起下单，请同时订购";
+
+  // 规则5：布蕾粉 6 袋起订（单品）
+  const bulei = items.find((it) => map.get(it.productId)?.minRule === "bulei6" && it.qty > 0);
+  if (bulei && bulei.qty < 6) {
+    return `布蕾粉 6 袋起订，当前 ${bulei.qty} 袋`;
+  }
 
   return null;
 }

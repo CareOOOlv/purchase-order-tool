@@ -41,7 +41,7 @@ for (const [id, price] of priceChecks) {
   check(`price ${p?.name}=${price}`, p?.price === price, String(p?.price));
 }
 check("石榴汁单位=瓶", defaultProducts.find((x) => x.id === 28)?.unit === "瓶");
-check("带*共5个", defaultProducts.filter((p) => p.starred).length === 5, String(defaultProducts.filter((p) => p.starred).map((p) => p.name)));
+check("带*共6个", defaultProducts.filter((p) => p.starred).length === 6, String(defaultProducts.filter((p) => p.starred).map((p) => p.name)));
 
 // ---- 起订规则 ----
 const P = (id, qty) => ({ productId: id, qty });
@@ -74,6 +74,19 @@ check("parse 工服3件(别名)", (() => { const r = parseOrderText("工服3件"
   check("工服冬装 110/件+备注", p?.price === 110 && p?.unit === "件" && p?.note === "定制1-2周到货");
 }
 
+// ---- 芝士粉(并入30池) + 布蕾粉(6袋起订) ----
+check("芝士粉带*且并入30池", (() => { const p = defaultProducts.find((x) => x.id === 61); return p?.starred && p?.bottlesPerBox === 1 && p?.minRule === "frozen30" && p?.price === 39; })());
+check("芝士粉29包→blocked", (validateOrderRules([P(61, 29)]) || "").includes("29"));
+check("芝士粉30包→pass", validateOrderRules([P(61, 30)]) === null);
+check("芒果24瓶+芝士粉5包=29→blocked", validateOrderRules([P(25, 2), P(61, 5)]) !== null);
+check("芒果24瓶+芝士粉6包=30→pass", validateOrderRules([P(25, 2), P(61, 6)]) === null);
+check("布蕾粉数据", (() => { const p = defaultProducts.find((x) => x.id === 62); return p?.price === 22 && p?.unit === "袋" && p?.minRule === "bulei6"; })());
+check("布蕾粉5袋→blocked", (validateOrderRules([P(62, 5)]) || "").includes("6 袋起订"));
+check("布蕾粉6袋→pass", validateOrderRules([P(62, 6)]) === null);
+check("不订布蕾粉→不触发", validateOrderRules([P(30, 1)]) === null);
+check("parse 芝士粉10包", (() => { const r = parseOrderText("芝士粉10包")[0]; return r.productId === 61 && r.quantity === 10; })());
+check("parse 布蕾粉6袋", (() => { const r = parseOrderText("布蕾粉6袋")[0]; return r.productId === 62 && r.quantity === 6; })());
+
 // ---- 服务端同款逻辑（从云函数源码提取） ----
 const fs = require("fs");
 const src = fs.readFileSync("D:/workbuddy storage/2026-10-05-14-30-24/purchase-order-tool/cloudfunctions/fr-api/index.js", "utf8");
@@ -92,6 +105,10 @@ check("SR 杯盖2箱→pass", serverFn([mkServer(14, 1, "透明拱盖"), mkServe
 check("SR 不订触发品→pass", serverFn([mkServer(30, 1, "牛奶")]) === null);
 check("SR 1L杯不带盖→blocked", (serverFn([mkServer(57, 2, "1L装杯子")]) || "").includes("1L盖子"));
 check("SR 1L杯+盖→pass", serverFn([mkServer(57, 2, "1L装杯子"), mkServer(58, 2, "1L盖子")]) === null);
+check("SR 芝士粉29包→blocked", (serverFn([mkServer(61, 29, "芝士粉")]) || "").includes("29"));
+check("SR 芒果24+芝士粉6=30→pass", serverFn([mkServer(25, 2, "冷冻芒果原浆"), mkServer(61, 6, "芝士粉")]) === null);
+check("SR 布蕾粉5袋→blocked", (serverFn([mkServer(62, 5, "布蕾粉")]) || "").includes("6 袋起订"));
+check("SR 布蕾粉6袋→pass", serverFn([mkServer(62, 6, "布蕾粉")]) === null);
 
 console.log(`\n===== ${pass} passed, ${failCount} failed =====`);
 process.exit(failCount ? 1 : 0);

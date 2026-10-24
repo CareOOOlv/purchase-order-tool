@@ -138,12 +138,13 @@ async function validateStore(p) {
 }
 
 // ==================== 起订规则（与 src/data/products.ts 保持一致） ====================
-// 带*冷冻品：id 25 芒果(12瓶/箱) 26 红苹果(12) 28 定制石榴汁(按瓶=1) 29 凤梨(12) 49 小麦草(6)
-const FROZEN_BOTTLES_PER = { 25: 12, 26: 12, 28: 1, 29: 12, 49: 6 };
+// 带*冷冻品：id 25 芒果(12瓶/箱) 26 红苹果(12) 28 定制石榴汁(按瓶=1) 29 凤梨(12) 49 小麦草(6) 61 芝士粉(按包=1)
+const FROZEN_BOTTLES_PER = { 25: 12, 26: 12, 28: 1, 29: 12, 49: 6, 61: 1 };
 const KAMILK_ID = 44;           // 咖奶：5箱起订
 const CUPS_IDS = [14, 15, 16, 17]; // 直饮盖/拱盖/500杯/700杯：合计满2箱起订（整箱）
 const CUP_1L_ID = 57;           // 1L装杯子 / 1L盖子：需搭配下单
 const LID_1L_ID = 58;
+const BULEI_ID = 62;            // 布蕾粉：6袋起订
 
 function validateOrderRules(cleanItems) {
   // 规则1：带*冷冻品合计满 30 瓶（一件不订则不触发）
@@ -186,6 +187,10 @@ function validateOrderRules(cleanItems) {
   const hasLid1L = cleanItems.some((it) => it.productId === LID_1L_ID && it.qty > 0);
   if (hasCup1L && !hasLid1L) return "1L装杯子需搭配 1L盖子 一起下单，请同时订购";
   if (hasLid1L && !hasCup1L) return "1L盖子需搭配 1L装杯子 一起下单，请同时订购";
+
+  // 规则5：布蕾粉 6 袋起订（单品）
+  const bulei = cleanItems.find((it) => it.productId === BULEI_ID && it.qty > 0);
+  if (bulei && bulei.qty < 6) return `布蕾粉 6 袋起订，当前 ${bulei.qty} 袋`;
 
   return null;
 }
