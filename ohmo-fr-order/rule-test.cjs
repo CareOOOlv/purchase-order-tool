@@ -86,6 +86,10 @@ check("布蕾粉6袋→pass", validateOrderRules([P(62, 6)]) === null);
 check("不订布蕾粉→不触发", validateOrderRules([P(30, 1)]) === null);
 check("parse 芝士粉10包", (() => { const r = parseOrderText("芝士粉10包")[0]; return r.productId === 61 && r.quantity === 10; })());
 check("parse 布蕾粉6袋", (() => { const r = parseOrderText("布蕾粉6袋")[0]; return r.productId === 62 && r.quantity === 6; })());
+check("蜜瓜上允数据", (() => { const p = defaultProducts.find((x) => x.id === 63); return p?.price === 132 && p?.unit === "箱" && p?.note === "一箱6瓶，450克/瓶"; })());
+check("parse 蜜瓜上允2箱", (() => { const r = parseOrderText("蜜瓜上允2箱")[0]; return r.productId === 63 && r.quantity === 2; })());
+check("parse 蜜瓜1箱(别名)", (() => { const r = parseOrderText("蜜瓜1箱")[0]; return r.productId === 63 && r.quantity === 1; })());
+check("蜜瓜上允不触发任何规则", validateOrderRules([P(63, 3)]) === null);
 
 // ---- 服务端同款逻辑（从云函数源码提取） ----
 const fs = require("fs");

@@ -92,6 +92,7 @@ export const defaultProducts: Product[] = [
   { id: 60, name: "工服冬装", price: 110, unit: "件", quantity: 0, note: "定制1-2周到货" },
   { id: 61, name: "芝士粉", price: 39, unit: "包", quantity: 0, note: "按包计价 · 带*每单合计满30瓶(包)起订", starred: true, bottlesPerBox: 1, minRule: "frozen30" },
   { id: 62, name: "布蕾粉", price: 22, unit: "袋", quantity: 0, note: "6袋起订", minRule: "bulei6" },
+  { id: 63, name: "蜜瓜上允", price: 132, unit: "箱", quantity: 0, note: "一箱6瓶，450克/瓶" },
 ];
 
 // ==================== 起订规则校验（客户端与服务端共用逻辑说明） ====================
