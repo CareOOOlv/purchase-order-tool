@@ -93,6 +93,9 @@ export const defaultProducts: Product[] = [
   { id: 61, name: "芝士粉", price: 39, unit: "包", quantity: 0, note: "按包计价 · 带*每单合计满30瓶(包)起订", starred: true, bottlesPerBox: 1, minRule: "frozen30" },
   { id: 62, name: "布蕾粉", price: 22, unit: "袋", quantity: 0, note: "6袋起订", minRule: "bulei6" },
   { id: 63, name: "蜜瓜上允", price: 132, unit: "箱", quantity: 0, note: "一箱6瓶，450克/瓶" },
+  { id: 64, name: "500ml热饮杯", price: 268, unit: "箱", quantity: 0, note: "一箱500个" },
+  { id: 65, name: "700ml热饮杯", price: 310, unit: "箱", quantity: 0, note: "一箱500个" },
+  { id: 66, name: "热饮盖", price: 180, unit: "箱", quantity: 0, note: "一箱1000个" },
 ];
 
 // ==================== 起订规则校验（客户端与服务端共用逻辑说明） ====================

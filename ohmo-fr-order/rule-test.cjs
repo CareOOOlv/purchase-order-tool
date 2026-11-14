@@ -90,6 +90,18 @@ check("蜜瓜上允数据", (() => { const p = defaultProducts.find((x) => x.id 
 check("parse 蜜瓜上允2箱", (() => { const r = parseOrderText("蜜瓜上允2箱")[0]; return r.productId === 63 && r.quantity === 2; })());
 check("parse 蜜瓜1箱(别名)", (() => { const r = parseOrderText("蜜瓜1箱")[0]; return r.productId === 63 && r.quantity === 1; })());
 check("蜜瓜上允不触发任何规则", validateOrderRules([P(63, 3)]) === null);
+{
+  const p64 = defaultProducts.find((x) => x.id === 64);
+  const p65 = defaultProducts.find((x) => x.id === 65);
+  const p66 = defaultProducts.find((x) => x.id === 66);
+  check("500ml热饮杯 268/箱500个", p64?.price === 268 && p64?.unit === "箱" && p64?.note === "一箱500个");
+  check("700ml热饮杯 310/箱500个", p65?.price === 310 && p65?.unit === "箱" && p65?.note === "一箱500个");
+  check("热饮盖 180/箱1000个", p66?.price === 180 && p66?.unit === "箱" && p66?.note === "一箱1000个");
+  check("parse 500热饮杯2箱(别名)", (() => { const r = parseOrderText("500热饮杯2箱")[0]; return r.productId === 64 && r.quantity === 2; })());
+  check("parse 700ml热饮杯1箱", (() => { const r = parseOrderText("700ml热饮杯1箱")[0]; return r.productId === 65 && r.quantity === 1; })());
+  check("parse 热饮盖3箱", (() => { const r = parseOrderText("热饮盖3箱")[0]; return r.productId === 66 && r.quantity === 3; })());
+  check("热饮三品不触发任何规则", validateOrderRules([P(64, 1), P(65, 1), P(66, 1)]) === null);
+}
 
 // ---- 服务端同款逻辑（从云函数源码提取） ----
 const fs = require("fs");
